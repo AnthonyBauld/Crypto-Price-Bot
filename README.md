@@ -2,6 +2,8 @@
 
 This Discord bot updates its nickname every 1.5 minutes to the current price of a chosen cryptocurrency (e.g., "$67,123.45" for Bitcoin) and its activity every 5 minutes to the 24-hour percentage change (e.g., "+1.25% BTCUSD"). It uses the Binance API to fetch real-time price data and can be configured to track any cryptocurrency supported by Binance.
 
+![alt text](https://media.discordapp.net/attachments/1041966384428634162/1373847406512308295/Screenshot_2025-05-18_at_10.17.41_PM.png?ex=682be69a&is=682a951a&hm=01bc7f2a74bddf99704cc5cbea20ff89ab5995e2416732965b9d00002f0958a9&=&format=webp&quality=lossless&width=856&height=344 "Example")
+
 ## Features
 - **Nickname Updates**: Displays the crypto’s USD price as the bot’s nickname in all servers (requires "Change Nickname" permission).
 - **Activity Updates**: Shows the 24-hour percentage change as the bot’s activity status.
