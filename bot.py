@@ -12,7 +12,7 @@ load_dotenv()
 
 # Bot configuration using environment variables
 BOT_TOKEN = os.getenv('BOT_TOKEN')  # Discord bot token
-TRADING_PAIR = os.getenv('TRADING_PAIR', 'BTCUSDT')  # Crypto trading pair (e.g., BTCUSDT, ETHUSDT, SOLUSDT)
+TRADING_PAIR = os.getenv('TRADING_PAIR')  # Crypto trading pair (e.g., BTCUSDT, ETHUSDT, SOLUSDT)
 # Binance API URL for price and 24h change, dynamically set with TRADING_PAIR
 BINANCE_API_URL = f'https://api.binance.com/api/v3/ticker/24hr?symbol={TRADING_PAIR}'
 
