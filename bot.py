@@ -129,10 +129,10 @@ async def update_activity():
         # Assuming TRADING_PAIR is like "BTC-USD", split by '-' to get the coin symbol
         coin_symbol = TRADING_PAIR.split('-')[0]
         sign = '+' if change_24h >= 0 else ''  # Determine if the change is positive or negative
-        activity = discord.CustomActivity(name=f"{sign}{change_24h:.2f}% {coin_symbol}-USD on Coinbase.")
+        activity = discord.CustomActivity(name=f"{sign}{change_24h:.2f}% | {coin_symbol}-USD on Coinbase.")
         await client.change_presence(activity=activity)
         # Log the successful activity update
-        logging.info(f'Activity set to: {sign}{change_24h:.2f}% {coin_symbol}-USD on Coinbase.')
+        logging.info(f'Activity set to: {sign}{change_24h:.2f}% | {coin_symbol}-USD on Coinbase.')
 
     except Exception as e:
         # Log any errors during the overall activity update process
