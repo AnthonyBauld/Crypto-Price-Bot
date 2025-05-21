@@ -1,7 +1,7 @@
 # Import libraries needed for the Discord bot
 import discord           # Discord API library
-import aiohttp          # For making HTTP requests to Binance API
-import asyncio         # For handling asynchronous tasks
+import aiohttp          # For making HTTP requests to Coinbase API
+import asyncio         # For For handling asynchronous tasks
 import logging         # For logging bot activity and errors
 from dotenv import load_dotenv  # To load environment variables from .env
 import os              # To access environment variables
@@ -12,9 +12,14 @@ load_dotenv()
 
 # Bot configuration using environment variables
 BOT_TOKEN = os.getenv('BOT_TOKEN')  # Discord bot token
-TRADING_PAIR = os.getenv('TRADING_PAIR')  # Crypto trading pair (e.g., BTCUSDT, ETHUSDT, SOLUSDT)
-# Binance API URL for price and 24h change, dynamically set with TRADING_PAIR
-BINANCE_API_URL = f'https://api.binance.com/api/v3/ticker/24hr?symbol={TRADING_PAIR}'
+# Crypto trading pair (e.g., BTC-USD, ETH-USD, SOL-USD).
+# Ensure this matches the format expected by Coinbase Advanced Trade API.
+# Converting to uppercase to ensure consistency with API requirements.
+TRADING_PAIR = os.getenv('TRADING_PAIR').upper()
+
+# Coinbase Advanced Trade API URL for product details including price and 24h change.
+# The product_id is case-sensitive and uses a hyphen (e.g., BTC-USD).
+COINBASE_API_URL = f'https://api.coinbase.com/api/v3/brokerage/market/products/{TRADING_PAIR}'
 
 # Set up logging to console only (no file storage)
 logging.basicConfig(
@@ -48,15 +53,26 @@ async def on_ready():
 @tasks.loop(minutes=1.5)
 async def update_nickname():
     try:
-        # Fetch crypto price from Binance API
+        # Fetch crypto price from Coinbase API
         async with aiohttp.ClientSession() as session:
-            async with session.get(BINANCE_API_URL) as response:
+            async with session.get(COINBASE_API_URL) as response:
                 if response.status != 200:
-                    # Log API error
-                    logging.error(f'Binance API error in nickname update: Status {response.status}')
+                    error_data = await response.json()
+                    logging.error(f'Coinbase API error in nickname update: Status {response.status}. '
+                                  f'Response: {error_data}. '
+                                  f'Please check if TRADING_PAIR="{TRADING_PAIR}" is a valid product_id '
+                                  f'on Coinbase Advanced Trade (e.g., BTC-USD).')
                     return
+
                 data = await response.json()  # Parse JSON response
-                price = float(data['lastPrice'])  # Get current spot price
+                try:
+                    # The Coinbase Advanced Trade API response directly contains 'price' at the root level
+                    price = float(data['price'])  # Get current spot price
+                except KeyError:
+                    logging.error(f"KeyError: 'price' not found in Coinbase API response for nickname update. "
+                                  f"Full response: {data}. "
+                                  f"Ensure TRADING_PAIR='{TRADING_PAIR}' is correct and the API is returning expected data.")
+                    return # Exit if 'price' key is missing
 
         # Update nickname in all servers with formatted price
         new_nickname = f"${price:,.2f}"
@@ -65,59 +81,73 @@ async def update_nickname():
                 bot_member = server.get_member(client.user.id)
                 if bot_member:
                     await bot_member.edit(nick=new_nickname)
+                    # Log that the nickname was set, without mentioning the specific server name
                     logging.info(f'Nickname set to {new_nickname}')
                 else:
-                    logging.error('Bot member not found in a server')
+                    logging.warning(f'Bot member not found in server: {server.name}')
             except discord.errors.HTTPException as e:
-                # Log errors without server-specific data
-                logging.error(f'Failed to update nickname: {e}')
+                # Log Discord API specific errors (e.g., permissions)
+                logging.error(f'Failed to update nickname in server {server.name}: {e}')
             except Exception as e:
-                # Log unexpected errors
-                logging.error(f'Error updating nickname: {e}')
+                # Log any other unexpected errors during nickname update for a specific server
+                logging.error(f'Error updating nickname in server {server.name}: {e}')
 
     except Exception as e:
-        # Log any errors during nickname update
-        logging.error(f'Error in update_nickname: {e}')
+        # Log any errors during the overall nickname update process
+        logging.error(f'Error in update_nickname task: {e}')
 
 # Task: Update bot's activity every 5 minutes
 @tasks.loop(minutes=5)
 async def update_activity():
     try:
-        # Fetch crypto 24h change from Binance API
+        # Fetch crypto 24h change from Coinbase API
         async with aiohttp.ClientSession() as session:
-            async with session.get(BINANCE_API_URL) as response:
+            async with session.get(COINBASE_API_URL) as response:
                 if response.status != 200:
-                    # Log API error
-                    logging.error(f'Binance API error in activity update: Status {response.status}')
+                    error_data = await response.json()
+                    logging.error(f'Coinbase API error in activity update: Status {response.status}. '
+                                  f'Response: {error_data}. '
+                                  f'Please check if TRADING_PAIR="{TRADING_PAIR}" is a valid product_id '
+                                  f'on Coinbase Advanced Trade (e.g., BTC-USD).')
                     return
-                data = await response.json()  # Parse JSON response
-                change_24h = float(data['priceChangePercent'])  # Get 24h % change
 
-        # Clear current presence to avoid caching
+                data = await response.json()  # Parse JSON response
+                try:
+                    # Extract 'price_percentage_change_24h' directly from the root level
+                    change_24h = float(data['price_percentage_change_24h'])  # Get 24h % change
+                except KeyError:
+                    logging.error(f"KeyError: 'price_percentage_change_24h' not found in Coinbase API response for activity update. "
+                                  f"Full response: {data}. "
+                                  f"Ensure TRADING_PAIR='{TRADING_PAIR}' is correct and the API is returning expected data.")
+                    return # Exit if 'price_percentage_change_24h' key is missing
+
+        # Clear current presence to avoid caching issues with Discord
         await client.change_presence(activity=None)
-        await asyncio.sleep(0.5)  # Wait briefly to ensure clear
+        await asyncio.sleep(0.5)  # Wait briefly to ensure the presence clears
+
         # Set activity with 24h percentage change
-        coin_symbol = TRADING_PAIR.replace('USDT', '')  # Extract coin symbol (e.g., BTC from BTCUSDT)
-        sign = '+' if change_24h >= 0 else ''  # Determine sign for percentage
-        activity = discord.CustomActivity(name=f"{sign}{change_24h:.2f}% {coin_symbol}USD")
+        # Assuming TRADING_PAIR is like "BTC-USD", split by '-' to get the coin symbol
+        coin_symbol = TRADING_PAIR.split('-')[0]
+        sign = '+' if change_24h >= 0 else ''  # Determine if the change is positive or negative
+        activity = discord.CustomActivity(name=f"{sign}{change_24h:.2f}% {coin_symbol}-USD on Coinbase.")
         await client.change_presence(activity=activity)
-        # Log activity update
-        logging.info(f'Activity set to: {sign}{change_24h:.2f}% {coin_symbol}USD')
+        # Log the successful activity update
+        logging.info(f'Activity set to: {sign}{change_24h:.2f}% {coin_symbol}-USD on Coinbase.')
 
     except Exception as e:
-        # Log any errors during activity update
-        logging.error(f'Error in update_activity: {e}')
+        # Log any errors during the overall activity update process
+        logging.error(f'Error in update_activity task: {e}')
 
-# Ensure tasks wait for bot to be ready
+# Ensure tasks wait for bot to be ready before starting their loops
 @update_nickname.before_loop
 @update_activity.before_loop
 async def before_tasks():
-    await client.wait_until_ready()  # Wait until bot is connected
+    await client.wait_until_ready()  # Wait until the bot is connected to Discord
 
 # Run the bot
 if __name__ == '__main__':
     try:
-        client.run(BOT_TOKEN)  # Start bot with token
+        client.run(BOT_TOKEN)  # Start the Discord bot with the provided token
     except Exception as e:
-        # Log any errors running the bot
+        # Log any critical errors that prevent the bot from running
         logging.error(f'Error running bot: {e}')
