@@ -1,6 +1,6 @@
 # Crypto Price Discord Bot
 
-This Discord bot updates its nickname every 1.5 minutes to the current price of a chosen cryptocurrency (e.g., "$67,123.45" for Bitcoin) and its activity every 5 minutes to the 24-hour percentage change (e.g., "+1.25% BTCUSD"). It uses the Binance API to fetch real-time price data and can be configured to track any cryptocurrency supported by Binance.
+This Discord bot updates its nickname every 1.5 minutes to the current price of a chosen cryptocurrency (e.g., "$67,123.45" for Bitcoin) and its activity every 5 minutes to the 24-hour percentage change (e.g., "+1.25% BTCUSD"). It uses the Coinbase API to fetch real-time price data and can be configured to track any cryptocurrency supported by Coinbase.
 
 ![alt text](https://media.discordapp.net/attachments/1041966384428634162/1373847406512308295/Screenshot_2025-05-18_at_10.17.41_PM.png?ex=682be69a&is=682a951a&hm=01bc7f2a74bddf99704cc5cbea20ff89ab5995e2416732965b9d00002f0958a9&=&format=webp&quality=lossless&width=856&height=344 "Example")
 
@@ -66,15 +66,15 @@ This Discord bot updates its nickname every 1.5 minutes to the current price of 
 
 ## Changing the Cryptocurrency
 
-To track a different cryptocurrency, update the `TRADING_PAIR` in the `.env` file. The bot uses Binance’s API, which supports many trading pairs (e.g., `BTCUSDT`, `ETHUSDT`, `SOLUSDT`).
+To track a different cryptocurrency, update the `TRADING_PAIR` in the `.env` file. The bot uses Coinbase’s API, which supports many trading pairs (e.g., `BTCUSDT`, `ETHUSDT`, `SOLUSDT`).
 
 ### Steps
 1. **Find the Trading Pair**
-   - Visit [Binance’s Exchange](https://www.binance.com/en/trade) or API docs (`https://api.binance.com/api/v3/ticker/24hr`).
+   - Visit [Coinbase’s Exchange](https://www.Coinbase.com/en/trade) or API docs (`https://api.Coinbase.com/api/v3/ticker/24hr`).
    - Identify the trading pair for your cryptocurrency, typically in the format `<COIN>USDT` (e.g., `ETHUSDT` for Ethereum, `ADAUSDT` for Cardano).
    - Test the pair with:
      ```bash
-     curl https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT
+     curl https://api.Coinbase.com/api/v3/ticker/24hr?symbol=ETHUSDT
      ```
      Ensure it returns data like `{"symbol":"ETHUSDT","lastPrice":"3456.78","priceChangePercent":"1.25"}`.
 
@@ -93,8 +93,8 @@ To track a different cryptocurrency, update the `TRADING_PAIR` in the `.env` fil
    - The bot will now track the new cryptocurrency (e.g., nickname: “$3,456.78”, activity: “+1.25% ETHUSD”).
 
 ### Supported Cryptocurrencies
-- **Common Pairs**: `BTCUSDT` (Bitcoin), `ETHUSDT` (Ethereum), `SOLUSDT` (Solana), `ADAUSDT` (Cardano), `XRPUSDT` (Ripple), `BNBUSDT` (Binance Coin).
-- **Others**: Check Binance’s API or exchange for available `<COIN>USDT` pairs.
+- **Common Pairs**: `BTCUSDT` (Bitcoin), `ETHUSDT` (Ethereum), `SOLUSDT` (Solana), `ADAUSDT` (Cardano), `XRPUSDT` (Ripple), `BNBUSDT` (Coinbase Coin).
+- **Others**: Check Coinbase’s API or exchange for available `<COIN>USDT` pairs.
 - **Note**: Ensure the pair ends with `USDT` for USD-based pricing. Other pairs (e.g., `BTCBUSD`) may work but require code adjustments.
 
 ## Troubleshooting
@@ -114,13 +114,13 @@ To track a different cryptocurrency, update the `TRADING_PAIR` in the `.env` fil
   - Confirm logs show “Activity set to: +X.XX% <COIN>USD” every 5 minutes.
   - Refresh Discord (Ctrl+R) or check on mobile.
 
-- **Binance API Issues**
+- **Coinbase API Issues**
   - Test the API:
     ```bash
-    curl https://api.binance.com/api/v3/ticker/24hr?symbol=<TRADING_PAIR>
+    curl https://api.Coinbase.com/api/v3/ticker/24hr?symbol=<TRADING_PAIR>
     ```
   - Ensure `TRADING_PAIR` is valid (e.g., `BTCUSDT`, not `BTC`).
-  - Check for “Binance API error” in logs.
+  - Check for “Coinbase API error” in logs.
 
 - **Logs**
   - All logs are console-only and use “server” (not “guild”).
